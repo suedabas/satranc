@@ -10,15 +10,20 @@
     table { width:470px; height:100px;}
     table { box-shadow: 0px 0px 10px 14px #451731;}
     table { margin: 0 auto; }
-    td { width: 25px; height: 25px; text-align:center;}
+    td { width: 40px; height: 40px; text-align:center;}
+    td { cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent;}
     tr { width:155px; height:55px}
     .b { background-color:bisque}
     .s { background-color:rgb(113, 110, 110)}
+    .secili { background-color:#641048; opacity:0.7;}
+    .hedef { background-image:radial-gradient(circle, rgba(159, 4, 113, 0.6) 22%, transparent 26%)}
+    #durum { text-align:center; margin-top:30px}
+    #yeni { display:block; margin:0 auto}
 
 </style>
     </head>
     <body>
-        <table width="100px" height="100px">
+        <table id="tahta" width="100px" height="100px">
             <tr>
                 <td class="b">♜</td>
                  <td class="s">♞</td>
@@ -52,7 +57,7 @@
             </tr>
 <tr>
                 <td class="s"></td>
-                    <td class="b"></td>  </td>
+                    <td class="b"></td>
                     <td class=" s"></td>
                     <td class="b"></td>
                     <td class="s"></td>
@@ -72,7 +77,7 @@
             </tr>
             <tr>
                 <td class="s"></td>
-                    <td class="b"></td>  </td>
+                    <td class="b"></td>
                     <td class=" s"></td>
                     <td class="b"></td>
                     <td class="s"></td>
@@ -101,5 +106,8 @@
                     <td class="b">♖</td>
             </tr>
         </table>
+        <p id="durum"></p>
+        <button id="yeni">new game</button>
+        <script type="module" src="app.js"></script>
     </body>
 </html>
