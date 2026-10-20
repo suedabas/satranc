@@ -140,7 +140,7 @@ function ciz() {
 
 function durumuYaz() {
   let yazi = oyun.turn() === 'w' ? 'beyaz' : 'siyah';
-  if (mod === 'ai' && oyun.turn() !== INSAN) yazi += ' (yapay zekâ)';
+  if (mod === 'ai' && oyun.turn() !== INSAN) yazi += ' (yapay zeka)';
   if (mod === 'online') yazi += oyun.turn() === renkim ? ' (sen)' : ' (rakip)';   // YENİ
 
   if (oyun.isCheckmate()) {
@@ -376,11 +376,11 @@ function onlineKapat() {
 
 function hataYaz(err) {
   if (err.type === 'peer-unavailable') {
-    onlineDurum.textContent = 'Bu kodla açık bir oyun bulunamadı. Kodu kontrol et.';
+    onlineDurum.textContent = 'kodu kontrol et';
   } else if (err.type === 'unavailable-id') {
-    onlineDurum.textContent = 'Kod çakıştı, "Oyun kur"a tekrar bas.';
+    onlineDurum.textContent = 'kod çakıştı, "tekrar dene"';
   } else {
-    onlineDurum.textContent = 'Bağlantı hatası (' + err.type + '). İnternetini kontrol edip tekrar dene.';
+    onlineDurum.textContent = 'Bağlantı hatası (' + err.type + '). internetini kontrol edip tekrar dene.';
   }
 }
 
@@ -399,7 +399,7 @@ function onlineKur() {
   peer = new Peer('satranc-' + kod);
 
   peer.on('open', () => {
-    onlineDurum.textContent = 'Oyun kodu: ' + kod + '  (arkadaşın bu kodu girsin, sen beyazsın)';
+    onlineDurum.textContent = 'oyun kodu: ' + kod + '  (kodu ilet)';
   });
   peer.on('connection', c => {
     if (baglanti) { c.close(); return; }    // zaten biri bağlı, üçüncü kişiyi alma
@@ -415,7 +415,7 @@ function onlineKatil() {
   }
   const kod = kodGirdisi.value.trim().toUpperCase();
   if (kod.length !== 5) {
-    onlineDurum.textContent = 'Kod 5 karakter olmalı.';
+    onlineDurum.textContent = 'kod 5 karakter olmalı.';
     return;
   }
   onlineKapat();
@@ -423,7 +423,7 @@ function onlineKatil() {
   renkim = 'b';
   yeniOyun();
 
-  onlineDurum.textContent = 'Bağlanılıyor...';
+  onlineDurum.textContent = 'bağlanılıyor';
   peer = new Peer();
 
   peer.on('open', () => {
@@ -436,12 +436,12 @@ function baglantiyiHazirla(c) {
   c.on('open', () => {
     baglanti = c;
     yeniOyun();
-    onlineDurum.textContent = 'Bağlandı! Sen ' + (renkim === 'w' ? 'beyazsın' : 'siyahsın') + '.';
+    onlineDurum.textContent = 'bağlandı sen ' + (renkim === 'w' ? 'beyazsın' : 'siyahsın') + '.';
   });
   c.on('data', mesajAl);
   c.on('close', () => {
     baglanti = null;
-    onlineDurum.textContent = 'Rakip ayrıldı ya da bağlantı koptu. Yeni oyun kurabilirsin.';
+    onlineDurum.textContent = 'yeni oyun kurabilirsin.';
   });
 }
 
@@ -499,7 +499,7 @@ document.getElementById('modOnline').addEventListener('click', () => {
   onlineKapat();
   mod = 'online';
   renkim = 'w';
-  onlineDurum.textContent = '"Oyun kur"a bas ya da arkadaşının kodunu yazıp "Katıl"a bas.';
+  onlineDurum.textContent = ':)';
   yeniOyun();
 });
 
@@ -509,7 +509,7 @@ document.getElementById('onlineKatil').addEventListener('click', onlineKatil);
 document.getElementById('yeni').addEventListener('click', () => {
   if (mod === 'online') {
     if (!baglanti) return;
-    if (!confirm('Oyun iki taraf için de sıfırlanacak. Emin misin?')) return;
+    if (!confirm('oyun iki taraf için de sıfırlanacak emin misin?')) return;
     baglanti.send({ tip: 'yeni' });
   }
   yeniOyun();
