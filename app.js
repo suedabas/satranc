@@ -5,6 +5,9 @@ const tahta = document.getElementById('tahta');
 const durum = document.getElementById('durum');
 const yenilenler = document.getElementById('yenilenler');
 const terfiPaneli = document.getElementById('terfi');
+const onlinePanel = document.getElementById('onlinePanel');          // YENİ
+const onlineDurum = document.getElementById('onlineDurum');          // YENİ
+const kodGirdisi = document.getElementById('kodGirdisi');            // YENİ
 
 const TASLAR = {
  w: { k: '♔', q: '♕', r: '♖', b: '♗', n: '♘', p: '♙' },
@@ -89,21 +92,30 @@ const PST = {
 
 const INSAN = 'w';     // yapay zekâya karşı oynarken sen beyazsın
 
-let mod = 'ai';      // 'ai' = yapay zekâya karşı, 'iki' = iki kişilik
+let mod = 'ai';      // 'ai' = yapay zekâya karşı, 'iki' = iki kişilik, 'online' = internetten
 let secili = null;   // dokunduğun taşın karesi, örn. 'e2'
 let hedefler = [];   // o taşın gidebileceği kareler, örn. ['e3', 'e4']
 let bekleyenTerfi = null;   // terfi seçimi beklenirken { from, to }
+
+// YENİ: online mod için
+let peer = null;        // PeerJS ile kayıt olduğumuz "rehber" kaydı
+let baglanti = null;    // rakiple doğrudan hat (bağlıysa dolu, değilse null)
+let renkim = 'w';       // online oynarken benim rengim: kuran beyaz, katılan siyah
 
 // ---------- ÇİZİM ----------
 
 function ciz() {
   tahta.innerHTML = '';
   const dizi = oyun.board();
+  const cevir = mod === 'online' && renkim === 'b';   // YENİ: siyah oynayan tahtayı ters görür
 
-  for (let satir = 0; satir < 8; satir++) {
+  for (let r = 0; r < 8; r++) {
     const tr = document.createElement('tr');
 
-    for (let sutun = 0; sutun < 8; sutun++) {
+    for (let c = 0; c < 8; c++) {
+      const satir = cevir ? 7 - r : r;       // ekrandaki konumdan gerçek konuma
+      const sutun = cevir ? 7 - c : c;
+
       const td = document.createElement('td');
       const kareAdi = HARFLER[sutun] + (8 - satir);
 
@@ -129,9 +141,10 @@ function ciz() {
 function durumuYaz() {
   let yazi = oyun.turn() === 'w' ? 'beyaz' : 'siyah';
   if (mod === 'ai' && oyun.turn() !== INSAN) yazi += ' (yapay zekâ)';
+  if (mod === 'online') yazi += oyun.turn() === renkim ? ' (sen)' : ' (rakip)';   // YENİ
 
   if (oyun.isCheckmate()) {
-    yazi = 'checkmate ' + (oyun.turn() === 'w' ? 'siyah' : 'beyaz');
+    yazi = 'checkmate' + (oyun.turn() === 'w' ? 'siyah' : 'beyaz');
   } else if (oyun.isStalemate()) {
     yazi = 'pat';
   } else if (oyun.isDraw()) {
@@ -178,6 +191,7 @@ function karaDokun(kare) {
   if (oyun.isGameOver()) return;
   if (bekleyenTerfi) return;                            // terfi seçilirken tahta kilitli
   if (mod === 'ai' && oyun.turn() !== INSAN) return;    // yapay zekâ düşünürken dokunamazsın
+  if (mod === 'online' && (!baglanti || oyun.turn() !== renkim)) return;   // YENİ: bağlı değilsen ya da sıra rakipteyse dokunamazsın
 
   // Taş seçiliyse ve dokunduğun yer yeşil noktalı bir kareyse: hamle yap
   if (secili && hedefler.includes(kare)) {
@@ -211,6 +225,9 @@ function hamleYap(kaynak, hedef, terfi) {
   bekleyenTerfi = null;
   terfiPaneli.classList.remove('acik');
   ciz();
+  if (mod === 'online' && baglanti) {                                   // YENİ: hamleyi rakibe yolla
+    baglanti.send({ tip: 'hamle', from: kaynak, to: hedef, promotion: terfi });
+  }
   if (mod === 'ai') aiOyna();
 }
 
@@ -338,11 +355,122 @@ function aiOyna() {
   }, 400);
 }
 
+// ---------- YENİ: ONLINE MOD ----------
+
+// Karışması kolay harfleri (0, O, 1, I) kodda kullanmıyoruz
+const KOD_HARFLERI = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function rastgeleKod() {
+  let kod = '';
+  for (let i = 0; i < 5; i++) {
+    kod += KOD_HARFLERI[Math.floor(Math.random() * KOD_HARFLERI.length)];
+  }
+  return kod;
+}
+
+// Açık bağlantı ve kayıt varsa kapat
+function onlineKapat() {
+  if (baglanti) { baglanti.close(); baglanti = null; }
+  if (peer) { peer.destroy(); peer = null; }
+}
+
+function hataYaz(err) {
+  if (err.type === 'peer-unavailable') {
+    onlineDurum.textContent = 'Bu kodla açık bir oyun bulunamadı. Kodu kontrol et.';
+  } else if (err.type === 'unavailable-id') {
+    onlineDurum.textContent = 'Kod çakıştı, "Oyun kur"a tekrar bas.';
+  } else {
+    onlineDurum.textContent = 'Bağlantı hatası (' + err.type + '). İnternetini kontrol edip tekrar dene.';
+  }
+}
+
+function onlineKur() {
+  if (typeof Peer === 'undefined') {
+    onlineDurum.textContent = 'PeerJS yüklenemedi (lib/peerjs.min.js dosyasını kontrol et).';
+    return;
+  }
+  onlineKapat();
+  mod = 'online';
+  renkim = 'w';
+  yeniOyun();
+
+  const kod = rastgeleKod();
+  onlineDurum.textContent = 'Kod oluşturuluyor...';
+  peer = new Peer('satranc-' + kod);
+
+  peer.on('open', () => {
+    onlineDurum.textContent = 'Oyun kodu: ' + kod + '  (arkadaşın bu kodu girsin, sen beyazsın)';
+  });
+  peer.on('connection', c => {
+    if (baglanti) { c.close(); return; }    // zaten biri bağlı, üçüncü kişiyi alma
+    baglantiyiHazirla(c);
+  });
+  peer.on('error', hataYaz);
+}
+
+function onlineKatil() {
+  if (typeof Peer === 'undefined') {
+    onlineDurum.textContent = 'PeerJS yüklenemedi (lib/peerjs.min.js dosyasını kontrol et).';
+    return;
+  }
+  const kod = kodGirdisi.value.trim().toUpperCase();
+  if (kod.length !== 5) {
+    onlineDurum.textContent = 'Kod 5 karakter olmalı.';
+    return;
+  }
+  onlineKapat();
+  mod = 'online';
+  renkim = 'b';
+  yeniOyun();
+
+  onlineDurum.textContent = 'Bağlanılıyor...';
+  peer = new Peer();
+
+  peer.on('open', () => {
+    baglantiyiHazirla(peer.connect('satranc-' + kod, { reliable: true }));
+  });
+  peer.on('error', hataYaz);
+}
+
+function baglantiyiHazirla(c) {
+  c.on('open', () => {
+    baglanti = c;
+    yeniOyun();
+    onlineDurum.textContent = 'Bağlandı! Sen ' + (renkim === 'w' ? 'beyazsın' : 'siyahsın') + '.';
+  });
+  c.on('data', mesajAl);
+  c.on('close', () => {
+    baglanti = null;
+    onlineDurum.textContent = 'Rakip ayrıldı ya da bağlantı koptu. Yeni oyun kurabilirsin.';
+  });
+}
+
+// Rakipten gelen mesajı işle
+function mesajAl(veri) {
+  if (!veri || typeof veri !== 'object') return;
+
+  if (veri.tip === 'hamle') {
+    if (oyun.turn() === renkim) return;      // sıra bende, rakip hamle yollayamaz: yok say
+    try {
+      oyun.move({ from: veri.from, to: veri.to, promotion: veri.promotion });
+    } catch (e) {
+      return;                                // yasadışı hamle: hakem reddetti
+    }
+    secili = null;
+    hedefler = [];
+    ciz();
+  } else if (veri.tip === 'yeni') {
+    yeniOyun();
+  }
+}
+
 // ---------- MOD VE DÜĞMELER ----------
 
 function butonlariBoya() {
   document.getElementById('modAi').classList.toggle('aktif', mod === 'ai');
   document.getElementById('modIki').classList.toggle('aktif', mod === 'iki');
+  document.getElementById('modOnline').classList.toggle('aktif', mod === 'online');
+  onlinePanel.classList.toggle('acik', mod === 'online');
 }
 
 function yeniOyun() {
@@ -356,16 +484,36 @@ function yeniOyun() {
 }
 
 document.getElementById('modAi').addEventListener('click', () => {
+  onlineKapat();
   mod = 'ai';
   yeniOyun();
 });
 
 document.getElementById('modIki').addEventListener('click', () => {
+  onlineKapat();
   mod = 'iki';
   yeniOyun();
 });
 
-document.getElementById('yeni').addEventListener('click', yeniOyun);
+document.getElementById('modOnline').addEventListener('click', () => {
+  onlineKapat();
+  mod = 'online';
+  renkim = 'w';
+  onlineDurum.textContent = '"Oyun kur"a bas ya da arkadaşının kodunu yazıp "Katıl"a bas.';
+  yeniOyun();
+});
+
+document.getElementById('onlineKur').addEventListener('click', onlineKur);
+document.getElementById('onlineKatil').addEventListener('click', onlineKatil);
+
+document.getElementById('yeni').addEventListener('click', () => {
+  if (mod === 'online') {
+    if (!baglanti) return;
+    if (!confirm('Oyun iki taraf için de sıfırlanacak. Emin misin?')) return;
+    baglanti.send({ tip: 'yeni' });
+  }
+  yeniOyun();
+});
 
 tahta.addEventListener('click', e => {
   const td = e.target.closest('td');

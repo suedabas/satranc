@@ -25,6 +25,10 @@
     #butonlar { text-align:center}
     button { margin:4px; padding:8px 14px; font-size:15px; border:2px solid #9e306f; background-color:white; border-radius:6px}
     button.aktif { background-color:#9e306f; color:white}
+    #onlinePanel { display:none; text-align:center; margin-top:10px}
+    #onlinePanel.acik { display:block}
+    #kodGirdisi { font-size:18px; padding:8px; width:110px; text-align:center; text-transform:uppercase; border:2px solid #9e306f; border-radius:6px}
+    #onlineDurum { margin-top:8px}
 </style>
     </head>
     <body>
@@ -124,7 +128,16 @@
             <button id="yeni">new game</button>
             <button id="modAi">AI</button>
             <button id="modIki">face to face</button>
+            <button id="modOnline">online</button>
         </div>
-        <script type="module" src="app.js?v=5"></script>
+        <div id="onlinePanel">
+            <button id="onlineKur">oyun kur</button>
+            <input id="kodGirdisi" placeholder="KOD" maxlength="5" autocomplete="off">
+            <button id="onlineKatil">katıl</button>
+            <p id="onlineDurum"></p>
+        </div>
+        <script src="lib/peerjs.min.js"></script>
+        <script type="module" src="app.js?v=7"></script>
     </body>
 </html>
+    
