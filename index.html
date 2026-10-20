@@ -5,25 +5,30 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>checkmate</title>
 <style>
+    :root { --kare: min(calc((100vw - 70px) / 8), 64px); }
+    body { touch-action: manipulation; }
     table { border-collapse:collapse; }
     table { border: 10px solid #9e306f; }
-    table { width:470px; height:100px;}
     table { box-shadow: 0px 0px 10px 14px #451731;}
     table { margin: 0 auto; }
-    td { width: 40px; height: 40px; text-align:center;}
+    td { width: var(--kare); height: var(--kare); text-align:center; padding:0; font-size: calc(var(--kare) * 0.75); line-height:1;}
     td { cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent;}
-    tr { width:155px; height:55px}
     .b { background-color:bisque}
     .s { background-color:rgb(113, 110, 110)}
     .secili { background-color:#641048; opacity:0.7;}
     .hedef { background-image:radial-gradient(circle, rgba(159, 4, 113, 0.6) 22%, transparent 26%)}
     #durum { text-align:center; margin-top:30px}
-    #yeni { display:block; margin:0 auto}
-
+    #yenilenler { text-align:center; margin-top:10px; font-size:20px; white-space:pre-line}
+    #terfi { display:none; text-align:center; margin-top:10px}
+    #terfi.acik { display:block}
+    #terfi button { font-size:22px}
+    #butonlar { text-align:center}
+    button { margin:4px; padding:8px 14px; font-size:15px; border:2px solid #9e306f; background-color:white; border-radius:6px}
+    button.aktif { background-color:#9e306f; color:white}
 </style>
     </head>
     <body>
-        <table id="tahta" width="100px" height="100px">
+        <table id="tahta">
             <tr>
                 <td class="b">♜</td>
                  <td class="s">♞</td>
@@ -107,7 +112,19 @@
             </tr>
         </table>
         <p id="durum"></p>
-        <button id="yeni">new game</button>
-        <script type="module" src="app.js"></script>
+        <div id="yenilenler"></div>
+        <div id="terfi">
+            <p>Piyon hangi taş olsun?</p>
+            <button data-tas="n"></button>
+            <button data-tas="q"></button>
+            <button data-tas="r"></button>
+            <button data-tas="b"></button>
+        </div>
+        <div id="butonlar">
+            <button id="yeni">new game</button>
+            <button id="modAi">AI</button>
+            <button id="modIki">face to face</button>
+        </div>
+        <script type="module" src="app.js?v=5"></script>
     </body>
 </html>
